@@ -72,16 +72,18 @@ public class Scheduler implements SymbolicSearch {
     /** Current depth of exploration */
     private int depth = 0;
     /** Whether or not search is done */
-    private boolean done = false;
+    private Guard done = Guard.constFalse();
 
     int choiceDepth = 0;
+
+    List<List<List<ValueSummary>>> prevStates = new ArrayList<>();
 
     /** Reset scheduler state
      */
     public void reset() {
         depth = 0;
         choiceDepth = 0;
-        done = false;
+        done = Guard.constFalse();
         machineCounters.clear();
         machines.clear();
     }
@@ -97,7 +99,7 @@ public class Scheduler implements SymbolicSearch {
      * @return Whether or not there are more steps to run
      */
     public boolean isDone() {
-        return done || depth == configuration.getDepthBound();
+        return done.isTrue() || depth == configuration.getDepthBound();
     }
 
     /** Get current depth
@@ -293,6 +295,30 @@ public class Scheduler implements SymbolicSearch {
             Assert.prop(depth < configuration.getMaxDepthBound(), "Maximum allowed depth " + configuration.getMaxDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
             step();
         }
+        List<List<ValueSummary>> finalState = prevStates.get(prevStates.size() - 1);
+        // specific for OOPSLA example
+        /*
+        Guard trueCond = Guard.constFalse();
+        for (List<ValueSummary> machineState : finalState) {
+            for (ValueSummary vs : machineState) {
+                if (vs instanceof PrimitiveVS) {
+                    if (((PrimitiveVS) vs).hasValue(true)) {
+                        trueCond = ((PrimitiveVS) vs).getGuardFor(true);
+                        System.out.println("true cond found");
+                    }
+                }
+            }
+        }
+        for (List<ValueSummary> machineState : finalState) {
+            System.out.println(machineState.get(0).restrict(trueCond));
+            for (ValueSummary vs : machineState) {
+                if (vs instanceof MapVS) {
+                    System.out.println(((MapVS) vs.restrict(trueCond)).entries);
+                }
+            }
+        }
+
+         */
     }
 
     public void print_stats() {
@@ -457,14 +483,15 @@ public class Scheduler implements SymbolicSearch {
         PrimitiveVS<Machine> choices = getNextSender();
 
         if (choices.isEmptyVS()) {
-//            TraceLogger.finished(depth);
-            done = true;
+            TraceLogger.finished(depth);
+            done = Guard.constTrue();
             return;
         }
 
         Message effect = null;
         List<Message> effects = new ArrayList<>();
         int numMessages = 0;
+
         for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
@@ -487,7 +514,28 @@ public class Scheduler implements SymbolicSearch {
         effect = effect.merge(effects);
         TraceLogger.schedule(depth, effect);
 
-        performEffect(effect);
+        performEffect(effect.restrict(done.not()));
+
+        List<List<ValueSummary>> newStates = new ArrayList<>();
+        for (Machine machine : machines) {
+            newStates.add(machine.getLocalState());
+        }
+        for (List<List<ValueSummary>> preStates : prevStates) {
+            if (preStates.size() != newStates.size()) {
+                continue;
+            }
+            PrimitiveVS<Boolean> eq = new PrimitiveVS<>(true);
+            for (int i = 0; i < preStates.size(); i++) {
+                List<ValueSummary> preState = preStates.get(i);
+                List<ValueSummary> newState = newStates.get(i);
+                for (int j = 0; j < preState.size(); j++) {
+                    eq = BooleanVS.and(eq, preState.get(j).symbolicEquals(newState.get(j), Guard.constTrue()));
+                }
+            }
+            done = done.or(eq.getGuardFor(true));
+        }
+        prevStates.add(newStates);
+
 
         // simplify engine
 //        SolverEngine.simplifyEngineAuto();

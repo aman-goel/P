@@ -110,6 +110,14 @@ public abstract class Machine implements Serializable {
         return localState;
     }
 
+    public int setLocalState(List<ValueSummary> localState) {
+        int idx = 0;
+        this.currentState = (PrimitiveVS<State>) localState.get(idx++);
+        this.sendBuffer.setEvents(localState.get(idx++));
+        this.clock = (VectorClockVS) localState.get(idx++);
+        return idx;
+    }
+
     public Machine(String name, int id, EventBufferSemantics semantics, State startState, State... states) {
         this.name = name;
         this.instanceId = id;

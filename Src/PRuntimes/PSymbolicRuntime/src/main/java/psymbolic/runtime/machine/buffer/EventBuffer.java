@@ -47,4 +47,6 @@ public interface EventBuffer {
     PrimitiveVS<Boolean> hasSyncEventUnderGuard();
 
     public ValueSummary getEvents();
+
+    public void setEvents(ValueSummary events);
 }

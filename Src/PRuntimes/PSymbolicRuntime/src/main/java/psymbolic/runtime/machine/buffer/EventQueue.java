@@ -5,9 +5,13 @@ import psymbolic.runtime.scheduler.Scheduler;
 import psymbolic.runtime.logger.TraceLogger;
 import psymbolic.runtime.machine.Machine;
 import psymbolic.runtime.Message;
+<<<<<<< HEAD
 import psymbolic.valuesummary.Guard;
 import psymbolic.valuesummary.PrimitiveVS;
 import psymbolic.valuesummary.UnionVS;
+=======
+import psymbolic.valuesummary.*;
+>>>>>>> 7627dce6d (Adds setting machine's state)
 
 import java.io.Serializable;
 import java.util.function.Function;
@@ -81,5 +85,10 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
     public PrimitiveVS<Boolean> hasSyncEventUnderGuard() {
         return satisfiesPredUnderGuard(Message::isSyncEvent);
     }
-    
+
+    @Override
+    public ValueSummary getEvents() { return this.elements; }
+
+    @Override
+    public void setEvents(ValueSummary events) { this.elements = (ListVS<Message>) events; }
 }

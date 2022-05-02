@@ -48,6 +48,22 @@ public class PredVS<T> implements ValueSummary<PredVS<T>> {
         primVS = new PrimitiveVS<>(Collections.singleton(element));
     }
 
+    /** Copy-constructor for PredVS
+     * @param old The PredVS to copy
+     */
+    public PredVS(PredVS<T> old) {
+        this.primVS = new PrimitiveVS<>(old.primVS);
+    }
+
+    /**
+     * Copy the value summary
+     *
+     * @return A new cloned copy of the value summary
+     */
+    public PredVS<T> getCopy() {
+        return new PredVS(this);
+    }
+
     public List<PrimitiveVS<T>> getValues() {
         List<PrimitiveVS<T>> res = new ArrayList<>();
         for (GuardedValue<Set<T>> gv : primVS.getGuardedValues()) {

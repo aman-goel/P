@@ -90,5 +90,9 @@ public class EventQueue extends SymbolicQueue<Message> implements EventBuffer, S
     public ValueSummary getEvents() { return this.elements; }
 
     @Override
-    public void setEvents(ValueSummary events) { this.elements = (ListVS<Message>) events; }
+    public void setEvents(ValueSummary events) {
+        this.elements = (ListVS<Message>) events;
+//        this.elements = new ListVS((ListVS<Message>) events);
+        resetPeek();
+    }
 }

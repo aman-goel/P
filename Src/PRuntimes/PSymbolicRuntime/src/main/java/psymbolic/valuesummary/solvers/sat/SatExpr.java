@@ -38,13 +38,15 @@ public class SatExpr {
 
     public static void setExprLib(ExprLibType type) {
         exprType = type;
-        resetAbc();
         switch(type) {
             case Aig:	            exprImpl = new Aig();
+                                    resetAbc();
                 break;
             case Fraig:	            exprImpl = new Fraig();
+                                    resetAbc();
                 break;
             case Iaig:	            exprImpl = new Iaig();
+                                    resetAbc();
                 break;
             case NativeExpr:	    exprImpl = new NativeExpr();
                 break;
@@ -179,8 +181,9 @@ public class SatExpr {
         return newExpr(getExprImpl().getFalse());
     }
 
-    public static SatExpr NewVar() {
-        return newExpr(getExprImpl().newVar("x" + numVars++));
+    public static SatExpr NewVar(String name) {
+        numVars++;
+        return newExpr(getExprImpl().newVar(name));
     }
 
     public static SatExpr Not(SatExpr formula) {

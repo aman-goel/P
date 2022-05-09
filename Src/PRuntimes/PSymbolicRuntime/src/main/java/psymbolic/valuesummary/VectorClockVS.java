@@ -17,12 +17,24 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
         this.clock = new ListVS<>(universe);
     }
 
-    public VectorClockVS(VectorClockVS vc) {
-        this.clock = new ListVS<>(vc.clock);
+    /** Copy-constructor for VectorClockVS
+     * @param old The VectorClockVS to copy
+     */
+    public VectorClockVS(VectorClockVS old) {
+        this.clock = new ListVS<>(old.clock);
     }
 
     public VectorClockVS(ListVS<PrimitiveVS<Integer>> clock) {
         this.clock = clock;
+    }
+
+    /**
+     * Copy the value summary
+     *
+     * @return A new cloned copy of the value summary
+     */
+    public VectorClockVS getCopy() {
+        return new VectorClockVS(this);
     }
 
     public PrimitiveVS<Integer> size() {
@@ -140,6 +152,11 @@ public class VectorClockVS implements ValueSummary<VectorClockVS> {
     @Override
     public VectorClockVS merge(VectorClockVS summary) {
         return new VectorClockVS(clock.merge(summary.clock));
+    }
+
+    @Override
+    public VectorClockVS combineVals(VectorClockVS other) {
+        throw new RuntimeException("Predicates for vector clocks not supported!");
     }
 
     @Override

@@ -29,6 +29,22 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
         this.entries = new HashMap<>();
     }
 
+    /** Copy-constructor for MapVS
+     * @param old The MapVS to copy
+     */
+    public MapVS(MapVS<K, V> old) {
+        this(new SetVS<>(old.keys), new HashMap<>(old.entries));
+    }
+
+    /**
+     * Copy the value summary
+     *
+     * @return A new cloned copy of the value summary
+     */
+    public MapVS<K, V> getCopy() {
+        return new MapVS(this);
+    }
+
     /** Get the number of entries in the MapVS
      *
      * @return The size of the MapVS
@@ -105,8 +121,26 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
     }
 
     @Override
+    public MapVS<K, V> combineVals (MapVS<K, V> other) {
+        SetVS<PrimitiveVS<K>> newKeys = this.keys.combineVals(other.keys);
+        Map<K, V> newEntries = new HashMap<>();
+        Set<K> newMapKeys = new HashSet<>(this.entries.keySet());
+        newMapKeys.addAll(other.entries.keySet());
+        for (K key : newMapKeys) {
+            if (this.entries.containsKey(key) && other.entries.containsKey(key)) {
+                newEntries.put(key, this.entries.get(key).combineVals(other.entries.get(key)));
+            } else if (this.entries.containsKey(key)) {
+                newEntries.put(key, this.entries.get(key));
+            } else {
+                newEntries.put(key, other.entries.get(key).restrict(this.getUniverse()));
+            }
+        }
+        return new MapVS<>(newKeys, newEntries);
+    }
+
+    @Override
     public MapVS<K, V> updateUnderGuard(Guard guard, MapVS<K, V> update) {
-        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));
+        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));//.combineVals(this);
     }
 
     @Override
@@ -119,6 +153,7 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
         if (thisSet.isEmpty() && cmpSet.isEmpty()) return BooleanVS.trueUnderGuard(pc.and(guard));
 
         while (!thisSet.isEmpty()) {
+            guard = IntegerVS.lessThan(0, thisSet.size()).getGuardFor(true);
             PrimitiveVS<K> thisVal = thisSet.get(new PrimitiveVS<>(0).restrict(guard));
             PrimitiveVS<K> cmpVal = cmpSet.get(new PrimitiveVS<>(0).restrict(guard));
             assert(ValueSummaryChecks.equalUnder(thisVal, cmpVal, guard));
@@ -137,6 +172,14 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
     @Override
     public Guard getUniverse() {
         return keys.getUniverse();
+    }
+
+    public MapVS<K, V> put(PredVS<K> keySummary, V valSummary) {
+        MapVS<K, V> res = this.remove(keySummary);
+        for (PrimitiveVS<K> key : keySummary.getValues()) {
+            res = res.put(key, valSummary);
+        }
+        return res;
     }
 
     /** Put a key-value pair into the MapVS
@@ -169,6 +212,14 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
     public MapVS<K, V> add(PrimitiveVS<K> keySummary, V valSummary) {
         assert(ValueSummaryChecks.hasSameUniverse(keySummary.getUniverse(), valSummary.getUniverse()));
         return put(keySummary, valSummary);
+    }
+
+    public MapVS<K, V> remove(PredVS<K> keySummary) {
+        MapVS<K, V> res = this;
+        for (PrimitiveVS<K> key : keySummary.getValues()) {
+            res = res.remove(key);
+        }
+        return res;
     }
 
     /** Remove a key-value pair from the MapVS
@@ -220,6 +271,19 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
         return merger.merge(toMerge);
     }
 
+    public V get(PredVS<K> keySummary) {
+        V result = null;
+        for (PrimitiveVS<K> key : keySummary.getValues()) {
+            if (result == null) {
+                result = get(key);
+            } else {
+                result.updateUnderGuard(keySummary.getUniverse(), get(key));
+            }
+        }
+        if (result != null) return result;
+        throw new NoSuchElementException();
+    }
+
     /** Get whether the MapVS contains a
      *
      * @param keySummary The key ValueSummary
@@ -227,6 +291,14 @@ public class MapVS<K, V extends ValueSummary<V>> implements ValueSummary<MapVS<K
      */
     public PrimitiveVS<Boolean> containsKey(PrimitiveVS<K> keySummary) {
         return keys.contains(keySummary);
+    }
+
+    public PrimitiveVS<Boolean> containsKey(PredVS<K> keySummary) {
+        PrimitiveVS<Boolean> contains = new PrimitiveVS<>(false);
+        for (PrimitiveVS<K> val : keySummary.getValues()) {
+            contains = BooleanVS.or(contains, containsKey(val));
+        }
+        return contains;
     }
 
 }

@@ -23,6 +23,22 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
         this.elements = new ListVS<>(universe);
     }
 
+    /** Copy-constructor for SetVS
+     * @param old The SetVS to copy
+     */
+    public SetVS(SetVS<T> old) {
+        this.elements = new ListVS<>(old.elements);
+    }
+
+    /**
+     * Copy the value summary
+     *
+     * @return A new cloned copy of the value summary
+     */
+    public SetVS<T> getCopy() {
+        return new SetVS(this);
+    }
+
     public PrimitiveVS<Integer> size() {
         return elements.size();
     }
@@ -61,8 +77,13 @@ public class SetVS<T extends ValueSummary<T>> implements ValueSummary<SetVS<T>> 
     }
 
     @Override
+    public SetVS<T> combineVals(SetVS<T> other) {
+        return new SetVS<>(elements.combineVals(other.elements));
+    }
+
+    @Override
     public SetVS<T> updateUnderGuard(Guard guard, SetVS<T> update) {
-        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));
+        return this.restrict(guard.not()).merge(Collections.singletonList(update.restrict(guard)));//.combineVals(this);
     }
 
     @Override

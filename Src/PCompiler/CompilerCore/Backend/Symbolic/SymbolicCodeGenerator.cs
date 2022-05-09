@@ -158,6 +158,23 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Override");
+            context.WriteLine(output, "public List<ValueSummary> getLocalState() {");
+            context.WriteLine(output, "    List<ValueSummary> res = super.getLocalState();");
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"    res.add({CompilationContext.GetVar(field.Name)});");
+            context.WriteLine(output, "    return res;");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+
+            context.WriteLine(output, "@Override");
+            context.WriteLine(output, "public int setLocalState(List<ValueSummary> localState) {");
+            context.WriteLine(output, "    int idx = super.setLocalState(localState);");
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = ({GetSymbolicType(field.Type)}) localState.get(idx++);");
+            context.WriteLine(output, "    return idx;");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
 
             WriteMachineConstructor(context, output, machine);
 
@@ -199,6 +216,23 @@ namespace Plang.Compiler.Backend.Symbolic
 
             context.WriteLine(output);
 
+            context.WriteLine(output, "@Override");
+            context.WriteLine(output, "public List<ValueSummary> getLocalState() {");
+            context.WriteLine(output, "    List<ValueSummary> res = super.getLocalState();");
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"    res.add({CompilationContext.GetVar(field.Name)});");
+            context.WriteLine(output, "    return res;");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+
+            context.WriteLine(output, "@Override");
+            context.WriteLine(output, "public int setLocalState(List<ValueSummary> localState) {");
+            context.WriteLine(output, "    int idx = super.setLocalState(localState);");
+            foreach (var field in machine.Fields)
+                context.WriteLine(output, $"    {CompilationContext.GetVar(field.Name)} = ({GetSymbolicType(field.Type)}) localState.get(idx++);");
+            context.WriteLine(output, "    return idx;");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
 
             WriteMachineConstructor(context, output, machine);
 
@@ -1845,6 +1879,10 @@ namespace Plang.Compiler.Backend.Symbolic
                 case EnumElemRefExpr enumElemRefExpr:
                     {
                         var unguarded = $"new { GetSymbolicType(PrimitiveType.Int) }({enumElemRefExpr.Value.Value} /* enum {enumElemRefExpr.Type.OriginalRepresentation} elem {enumElemRefExpr.Value.Name} */)";
+                        if (enumElemRefExpr.IsPred)
+                        {
+                            unguarded = $"new PredVS<String>(\"{enumElemRefExpr.Value.Name}\")";
+                        }
                         var guarded = $"{unguarded}.restrict({pcScope.PathConstraintVar})";
                         context.Write(output, guarded);
                         break;
@@ -1902,12 +1940,40 @@ namespace Plang.Compiler.Backend.Symbolic
                             context.Write(output, $", {pcScope.PathConstraintVar})");
                             break;
                         case SequenceType sequenceType:
-                            context.Write(output, $"({GetSymbolicType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
+                            switch (sequenceType.ElementType)
+                            {
+                                case EnumType enumType:
+                                    if (enumType.IsPred)
+                                    {
+                                        context.Write(output, $"new {GetSymbolicType(sequenceType.ElementType)}(");
+                                    }
+                                    else {
+                                        context.Write(output, $"({GetSymbolicType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
+                                    }
+                                    break;
+                                default:
+                                    context.Write(output, $"({GetSymbolicType(sequenceType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
+                                    break;
+                            } 
                             WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
                             context.Write(output, $", {pcScope.PathConstraintVar})");
                             break;
                         case SetType setType:
-                            context.Write(output, $"({GetSymbolicType(setType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
+                            switch (setType.ElementType)
+                            {
+                                case EnumType enumType:
+                                    if (enumType.IsPred)
+                                    {
+                                        context.Write(output, $"new {GetSymbolicType(setType.ElementType)}(");
+                                    }
+                                    else {
+                                        context.Write(output, $"({GetSymbolicType(setType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
+                                    }
+                                    break;
+                                default:
+                                    context.Write(output, $"({GetSymbolicType(setType.ElementType)}) {CompilationContext.SchedulerVar}.getNextElement(");
+                                    break;
+                            } 
                             WriteExpr(context, output, pcScope, chooseExpr.SubExpr);
                             context.Write(output, $", {pcScope.PathConstraintVar})");
                             break;
@@ -2031,6 +2097,12 @@ namespace Plang.Compiler.Backend.Symbolic
                     return "Integer";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return "Float";
+                case EnumType enumType:
+                    if (enumType.IsPred)
+                    {
+                        return "String";
+                    }
+                    return "Integer";
                 default:
                     throw new NotImplementedException($"Concrete type '{type.OriginalRepresentation}' is not supported");
             }
@@ -2135,6 +2207,10 @@ namespace Plang.Compiler.Backend.Symbolic
                 case SetType setType:
                     return $"SetVS<{GetSymbolicType(setType.ElementType, true)}>";
                 case EnumType enumType:
+                    if (enumType.IsPred)
+                    {
+                        return $"PredVS<String> /* pred enum {enumType.OriginalRepresentation} */";
+                    }
                     return $"PrimitiveVS<Integer> /* enum {enumType.OriginalRepresentation} */";
                 default:
                     throw new NotImplementedException($"Symbolic type '{type.OriginalRepresentation}' not supported");
@@ -2172,7 +2248,11 @@ namespace Plang.Compiler.Backend.Symbolic
                     return $"new {GetSymbolicType(type)}(Guard.constTrue())";
                 case MapType _:
                     return $"new {GetSymbolicType(type)}(Guard.constTrue())";
-                case EnumType _:
+                case EnumType enumType:
+                    if (enumType.IsPred)
+                    {
+                        return $"new {GetSymbolicType(type)}()";
+                    }
                     return $"new {GetSymbolicType(type)}(0)";
                 case NamedTupleType namedTupleType:
                     {
@@ -2222,6 +2302,9 @@ namespace Plang.Compiler.Backend.Symbolic
             context.WriteLine(output, $"public class {context.ProjectName.ToLower()} implements Program {{");
             context.WriteLine(output);
             context.WriteLine(output, $"public static Scheduler {CompilationContext.SchedulerVar};");
+            context.WriteLine(output);
+            context.WriteLine(output, "@Override");
+            context.WriteLine(output, $"public Scheduler getScheduler () {{ return this.{CompilationContext.SchedulerVar}; }}");
             context.WriteLine(output);
             context.WriteLine(output, "@Override");
             context.WriteLine(output, $"public void setScheduler (Scheduler s) {{ this.{CompilationContext.SchedulerVar} = s; }}");

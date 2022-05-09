@@ -20,7 +20,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
      *
      *  The map 'guardedValues' should never be modified.
      */
-    private final Map<T, Guard> guardedValues;
+    protected final Map<T, Guard> guardedValues;
 
     /** Cached list of guarded values */
     private List<GuardedValue<T>> guardedValuesList;
@@ -47,7 +47,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
 
     public Set<T> getValues() {
         if(values == null)
-            values = guardedValues.keySet();
+            values = new HashSet(guardedValues.keySet());
         return values;
     }
 
@@ -75,7 +75,7 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
 
     /** Copy constructor for PrimitiveVS
      *
-     * @param old The PrimVS to copy
+     * @param old The PrimitiveVS to copy
      */
     public PrimitiveVS(PrimitiveVS<T> old) {
         this(old.guardedValues);
@@ -84,7 +84,14 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
     /** Make an empty PrimVS */
     public PrimitiveVS() { this(new HashMap<>()); }
 
-
+    /**
+     * Copy the value summary
+     *
+     * @return A new cloned copy of the value summary
+     */
+    public PrimitiveVS<T> getCopy() {
+        return new PrimitiveVS(this);
+    }
 
     /** Check if the provided value is a possibility
      *
@@ -189,6 +196,11 @@ public class PrimitiveVS<T> implements ValueSummary<PrimitiveVS<T>> {
             }
         }
         return new PrimitiveVS<>(result);
+    }
+
+    @Override
+    public PrimitiveVS<T> combineVals(PrimitiveVS<T> other) {
+        return this;
     }
 
     @Override

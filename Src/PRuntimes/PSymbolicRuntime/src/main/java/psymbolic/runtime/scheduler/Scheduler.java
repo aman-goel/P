@@ -81,6 +81,7 @@ public class Scheduler implements SymbolicSearch {
 
     int choiceDepth = 0;
 
+<<<<<<< HEAD
     /** Start depth at which create machine events are already explored */
     int startDepth = Integer.MAX_VALUE;
 
@@ -96,6 +97,8 @@ public class Scheduler implements SymbolicSearch {
         return result;
     }
 
+=======
+>>>>>>> parent of 9c27ad36d (Fix fixed point check and list symbolic equals)
     /** Reset scheduler state
      */
     public void reset() {
@@ -619,6 +622,7 @@ public class Scheduler implements SymbolicSearch {
 
         Message effect = null;
         List<Message> effects = new ArrayList<>();
+<<<<<<< HEAD
 
         List<List<ValueSummary>> originalStates = new ArrayList<>();
         for (Machine machine : machines) {
@@ -626,6 +630,9 @@ public class Scheduler implements SymbolicSearch {
         }
         prevStates.add(originalStates);
 
+=======
+        int numMessages = 0;
+>>>>>>> parent of 9c27ad36d (Fix fixed point check and list symbolic equals)
         for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
             Machine machine = sender.getValue();
             Guard guard = sender.getGuard();
@@ -763,7 +770,20 @@ public class Scheduler implements SymbolicSearch {
     void performEffect(Message event) {
         runMonitors(event);
         for (GuardedValue<Machine> target : event.getTarget().getGuardedValues()) {
+            List<ValueSummary> originalState = target.getValue().getLocalState();
             target.getValue().processEventToCompletion(target.getGuard(), event.restrict(target.getGuard()));
+            List<ValueSummary> newState = target.getValue().getLocalState();
+            Guard sameVals = null;
+            Guard diffVals = Guard.constFalse();
+            for (int i = 0; i < originalState.size(); i++) {
+                PrimitiveVS<Boolean> eq = originalState.get(i).symbolicEquals(newState.get(i), target.getGuard());
+                if (sameVals == null) {
+                    sameVals = eq.getGuardFor(true);
+                }
+                sameVals = sameVals.and(eq.getGuardFor(true));
+                diffVals = diffVals.or(eq.getGuardFor(false)).and(target.getGuard());
+            }
+            done = done.or(sameVals).and(diffVals.not());
         }
     }
 

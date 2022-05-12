@@ -67,7 +67,7 @@ typeDefDecl : TYPE name=iden SEMI # ForeignTypeDef
             | TYPE name=iden ASSIGN type SEMI # PTypeDef
             ;
 
-enumTypeDefDecl : PRED? ENUM name=iden LBRACE enumElemList RBRACE
+enumTypeDefDecl : ENUM name=iden LBRACE enumElemList RBRACE
                 | ENUM name=iden LBRACE numberedEnumElemList RBRACE
                 ;
 enumElemList : enumElem (COMMA enumElem)* ;

@@ -179,9 +179,6 @@ namespace Plang.Compiler.TypeChecker
             // ENUM name=iden
             var pEnum = (PEnum) nodesToDeclarations.Get(context);
 
-            // PRED?
-            pEnum.IsPred = context.PRED() != null;
-
             // LBRACE enumElemList RBRACE
             if (context.enumElemList() is PParser.EnumElemListContext elemList)
             {

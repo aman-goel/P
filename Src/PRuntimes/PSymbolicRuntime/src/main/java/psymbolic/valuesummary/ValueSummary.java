@@ -101,14 +101,6 @@ public interface ValueSummary<T extends ValueSummary<T>> extends Serializable {
     boolean isEmptyVS();
 
     /**
-     * Combine a PredVS-based value summary with another by adding current values to the other
-     *
-     * @param other The other PredVS-based value summery
-     * @return The result of adding the values
-     */
-    T combineVals(T other);
-
-    /**
      * Restrict the value summary's universe with a provided guard
      *
      * @param guard The guard to conjoin to the current value summary's universe

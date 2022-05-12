@@ -18,17 +18,22 @@ machine Coordinator
 	var pendingWrTrans: tWriteTransReq;
 	var currTransId: tPreds;
         var countPrepareResponses: int;
-        var choices : seq[tPreds];
+        //var choices : seq[tPreds];
+        var choices : tPreds;
 
 	start state Init {
 		entry (payload: seq[machine]) {
 			//initialize variables
 			participants = payload;
-                        choices += (0, EQKEY);
-                        choices += (1, NEQKEY);
-                        choices += (2, EQVAL);
-                        choices += (3, NEQVAL);
-			currTransId = choose(choices);
+                        //choices += (0, EQKEY);
+                       // choices += (1, NEQKEY);
+                      //  choices += (2, EQVAL);
+                      //  choices += (3, NEQVAL);
+                        choices = EQKEY;
+                        choices = NEQKEY;
+                        choices = EQVAL;
+                        choices = NEQVAL;
+			currTransId = choices;//choose(choices);
 			goto WaitForTransactions;
 		}
 
@@ -38,7 +43,7 @@ machine Coordinator
 	state WaitForTransactions {
 		on eWriteTransReq do (wTrans : tWriteTransReq) {
 			pendingWrTrans = wTrans;
-			currTransId = choose(choices);
+			currTransId = choices; //choose(choices);
 			BroadcastToAllParticipants(ePrepareReq, (coordinator = this, transId = currTransId, rec = wTrans.rec));
 
 			goto WaitForPrepareResponses;

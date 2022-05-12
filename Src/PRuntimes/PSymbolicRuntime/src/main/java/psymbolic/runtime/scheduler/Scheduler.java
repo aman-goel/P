@@ -368,6 +368,7 @@ public class Scheduler implements SymbolicSearch {
             Assert.prop(depth < configuration.getMaxDepthBound(), "Maximum allowed depth " + configuration.getMaxDepthBound() + " exceeded", this, schedule.getLengthCond(schedule.size()));
             step();
         }
+<<<<<<< HEAD
         searchStats.setIterationBacktracks(schedule.getNumBacktracks());
         if (done) {
             searchStats.setIterationCompleted();
@@ -422,6 +423,8 @@ public class Scheduler implements SymbolicSearch {
         searchStats.reset_stats();
         schedule.reset_stats();
         totalStates.clear();
+=======
+>>>>>>> parent of 7d65f50b6 (Update example, remove predicate disjunction except at construction)
     }
 
     public List<PrimitiveVS> getNextSenderChoices() {
@@ -616,6 +619,12 @@ public class Scheduler implements SymbolicSearch {
 
         Message effect = null;
         List<Message> effects = new ArrayList<>();
+
+        List<List<ValueSummary>> originalStates = new ArrayList<>();
+        for (Machine machine : machines) {
+            originalStates.add(machine.getLocalState());
+        }
+        prevStates.add(originalStates);
 
         for (GuardedValue<Machine> sender : choices.getGuardedValues()) {
             Machine machine = sender.getValue();

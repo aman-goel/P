@@ -6,7 +6,7 @@ type readRequest = (client: machine, key: tPreds);
 event read: readRequest;
 event readResp: tRecord;
 
-enum op { READ, WRITE }
+pred enum op { READ, WRITE };
 
 
 type ProposalIdType = (serverid: int, round: int);

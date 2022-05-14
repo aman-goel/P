@@ -58,7 +58,7 @@ namespace Plang.Compiler
         public Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount)
         {
             return IssueError(location,
-                $"function or constructor call expected {expectedCount} arguments, got {actualCount}");
+                $"goto, function or constructor call expected {expectedCount} arguments, got {actualCount}");
         }
 
         public Exception MissingDeclaration(ParserRuleContext location, string declarationKind, string missingName)
@@ -80,7 +80,12 @@ namespace Plang.Compiler
         {
             return IssueError(location, "expected an interface or int or float type");
         }
-
+        
+        public Exception NoMainOrTestCase(string message)
+        {
+            return new TranslationException(message);
+        }
+        
         public Exception IllegalInterfaceCoerce(ParserRuleContext context, PLanguageType oldType, PLanguageType newType)
         {
             PEvent outlierEvent =
@@ -177,34 +182,7 @@ namespace Plang.Compiler
             return IssueError(machineFunction.SourceLocation,
                 $"Method {DeclarationName(machineFunction)} is non-deterministic, but used in spec machine.");
         }
-
-        public Exception RelinquishedWithoutOwnership(ILinearRef linearRef)
-        {
-            return IssueError(linearRef.SourceLocation,
-                $"cannot give up ownership of variable {linearRef.Variable.Name} twice");
-        }
-
-        public Exception InvalidSwap(ILinearRef linearRef, string message)
-        {
-            return IssueError(linearRef.SourceLocation,
-                $"invalid swap of {linearRef.Variable.Name}. Reason: {message}");
-        }
-
-        public Exception UseWithoutOwnership(VariableAccessExpr variable)
-        {
-            return IssueError(variable.SourceLocation,
-                $"used variable {variable.Variable.Name} after a move or during a swap");
-        }
-
-        public Exception MovedField(MoveAssignStmt moveAssignStmt)
-        {
-            return IssueError(moveAssignStmt.SourceLocation, $"attempted to move field {moveAssignStmt.FromVariable}");
-        }
-
-        public Exception SwapAssignUnavailable(SwapAssignStmt swapAssignStmt, Variable variable)
-        {
-            return IssueError(swapAssignStmt.SourceLocation, $"variable {variable.Name} unavailable during swap");
-        }
+        
 
         public Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol)
         {

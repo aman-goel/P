@@ -1895,11 +1895,6 @@ namespace Plang.Compiler.Backend.Symbolic
                         $"{CompilationContext.GetVar(variableAccessExpr.Variable.Name)}.restrict(" +
                         $"{pcScope.PathConstraintVar})");
                     break;
-                case LinearAccessRefExpr linearAccessExpr:
-                    context.Write(output,
-                        $"{CompilationContext.GetVar(linearAccessExpr.Variable.Name)}.restrict(" +
-                        $"{pcScope.PathConstraintVar})");
-                    break;
                 case FunCallExpr funCallExpr:
                     throw new InvalidOperationException("Compilation of call expressions should be handled as part of assignment statements");
                 case ContainsExpr containsExpr:

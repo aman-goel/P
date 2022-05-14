@@ -58,16 +58,6 @@ namespace Plang.Compiler
 
         Exception NonDeterministicFunctionInSpecMachine(Function machineFunction);
 
-        Exception RelinquishedWithoutOwnership(ILinearRef linearRef);
-
-        Exception InvalidSwap(ILinearRef linearRef, string message);
-
-        Exception UseWithoutOwnership(VariableAccessExpr variable);
-
-        Exception MovedField(MoveAssignStmt moveAssignStmt);
-
-        Exception SwapAssignUnavailable(SwapAssignStmt swapAssignStmt, Variable variable);
-
         Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol);
 
         Exception InvalidStringExprFormat(PParser.FormatedStringContext context, IToken symbol);
@@ -109,15 +99,14 @@ namespace Plang.Compiler
         Exception RaiseEventInNonVoidFunction(ParserRuleContext context);
 
         Exception ChangeStateInNonVoidFunction(ParserRuleContext context);
-
-        Exception PrintStmtLinearArgument(ParserRuleContext argSourceLocation);
-
-        Exception StringAssignStmtLinearArgument(ParserRuleContext argSourceLocation);
+        
 
         Exception DuplicateReceiveCase(ParserRuleContext location, PEvent pEvent);
 
         Exception NoMain(ParserRuleContext sourceLocation, string v);
-
+        
+        Exception NoMainOrTestCase(string v);
+        
         Exception IllegalTypeInCoerceExpr(ParserRuleContext context);
 
         Exception IllegalInterfaceCoerce(ParserRuleContext context, PLanguageType oldType, PLanguageType newType);

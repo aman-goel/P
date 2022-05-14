@@ -228,13 +228,12 @@ Bld/*
 !Bld/Targets
 !Bld/Jars/
 PGenerated/
-*.4ml
-!Src/**/Domains/*.4ml
-*.zing
 !Src/**/Zing/*.zing
 stubs.c
 *.idb
 netcoreapp*/
+
+Tst/temp_builds/*
 
 # Maven
 target/
